@@ -1,0 +1,40 @@
+@model SporSalonuYonetim.Web.Entities.Service
+
+@{
+    ViewData["Title"] = "Yeni Hizmet Ekle";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow mt-4">
+            <div class="card-header bg-success text-white">
+                <h4>Yeni Hizmet Oluştur</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Hizmet Adı</label>
+                        <input asp-for="Name" class="form-control" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Süre (Dakika)</label>
+                            <input asp-for="Duration" type="number" class="form-control" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ücret (TL)</label>
+                            <input asp-for="Price" type="number" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary w-100 mt-2">Geri Dön</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
