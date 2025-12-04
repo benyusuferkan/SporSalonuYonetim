@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering; // SelectList için gerekli kütüphane
 using SporSalonuYonetim.Web.Data;
 using SporSalonuYonetim.Web.Entities;
 
@@ -9,7 +10,7 @@ namespace SporSalonuYonetim.Web.Controllers
     public class TrainersController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly IWebHostEnvironment _hostEnvironment; // Dosya yolu bulucu
+        private readonly IWebHostEnvironment _hostEnvironment;
 
         public TrainersController(AppDbContext context, IWebHostEnvironment hostEnvironment)
         {
@@ -22,45 +23,47 @@ namespace SporSalonuYonetim.Web.Controllers
             return View(_context.Trainers.ToList());
         }
 
+        // DEĞİŞİKLİK 1: Sayfa açılırken Branşları (Hizmetleri) yükle
         public IActionResult Create()
         {
+            // Dropdown için verileri hazırla: (Kaydedilecek Değer: Name, Ekranda Görünen: Name)
+            ViewBag.Services = new SelectList(_context.Services, "Name", "Name");
             return View();
         }
 
-        // FOTOĞRAF YÜKLEME İŞLEMİ BURADA
         [HttpPost]
         public async Task<IActionResult> Create(Trainer trainer, IFormFile photoFile)
         {
-            // Validasyon kontrolü (Fotoğraf seçildi mi?)
+            // Validasyon: Fotoğraf yüklenmiş mi?
             if (photoFile != null)
             {
-                // 1. Dosya adını benzersiz yap (örn: guid-resim.jpg)
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + photoFile.FileName;
-                
-                // 2. Kaydedilecek klasör yolu (wwwroot/images)
                 string uploadsFolder = Path.Combine(_hostEnvironment.WebRootPath, "images");
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-                // 3. Dosyayı kaydet
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await photoFile.CopyToAsync(fileStream);
                 }
-
-                // 4. Veritabanına dosya adını yaz
                 trainer.PhotoUrl = uniqueFileName;
             }
             else
             {
-                // Fotoğraf yüklemezse varsayılan bir resim atayabiliriz
-                trainer.PhotoUrl = "default.png"; 
+                // Fotoğraf yoksa varsayılan resim ata (Hata vermemesi için)
+                trainer.PhotoUrl = "default.png";
             }
 
-            // ModelState validasyonu (Hata yoksa kaydet)
-            // Not: PhotoUrl required ise, yukarıda atadığımız için valid geçer.
-            _context.Trainers.Add(trainer);
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
+            // Kaydetme İşlemi
+            if (ModelState.IsValid)
+            {
+                _context.Trainers.Add(trainer);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index");
+            }
+
+            // DEĞİŞİKLİK 2: Eğer hata varsa Dropdown'ı TEKRAR doldur (Yoksa sayfa patlar!)
+            ViewBag.Services = new SelectList(_context.Services, "Name", "Name");
+            return View(trainer);
         }
 
         public IActionResult Delete(int id)

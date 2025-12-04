@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SporSalonuYonetim.Web.styles.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <header>
@@ -32,6 +33,9 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark fw-bold" asp-controller="Appointment" asp-action="Index">📅 Randevularım</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-primary fw-bold" asp-controller="Ai" asp-action="Index">🤖 AI Spor Hocası</a>
+                            </li>
                         }
 
                         @if (User.IsInRole("Admin"))
@@ -41,6 +45,9 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark fw-bold" asp-controller="Trainers" asp-action="Index">💪 Eğitmenler</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-danger fw-bold" asp-controller="AdminAppointments" asp-action="Index">📋 Randevu Yönetimi</a>
                             </li>
                         }
                     </ul>
@@ -58,7 +65,10 @@
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-white bg-primary rounded px-3" asp-controller="Account" asp-action="Login">Giriş Yap</a>
+                                <a class="nav-link text-white bg-primary rounded px-3 me-2" asp-controller="Account" asp-action="Login">Giriş Yap</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white bg-success rounded px-3" asp-controller="Account" asp-action="Register">Kayıt Ol</a>
                             </li>
                         }
                     </ul>

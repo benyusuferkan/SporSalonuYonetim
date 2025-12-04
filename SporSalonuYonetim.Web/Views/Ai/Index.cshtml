@@ -1,0 +1,108 @@
+@{
+    ViewData["Title"] = "AI Spor Hocası";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-gradient bg-primary text-white text-center py-4">
+                    <h2 class="mb-0">🤖 Yapay Zeka Spor Hocası</h2>
+                    <p class="mb-0 text-white-50">Gemini AI destekli kişisel programınız</p>
+                </div>
+                <div class="card-body p-5">
+                    
+                    <form id="aiForm">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Yaşınız</label>
+                                <input type="number" id="age" class="form-control" placeholder="22" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Kilonuz (kg)</label>
+                                <input type="number" id="weight" class="form-control" placeholder="80" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Boyunuz (cm)</label>
+                                <input type="number" id="height" class="form-control" placeholder="180" required>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <label class="form-label fw-bold">Hedefiniz Nedir?</label>
+                                <select id="goal" class="form-select" required>
+                                    <option value="Kilo Vermek">Kilo Vermek (Yağ Yakımı)</option>
+                                    <option value="Kas Yapmak">Kas Kütlesi Kazanmak (Hacim)</option>
+                                    <option value="Fit Olmak">Daha Fit ve Enerjik Olmak</option>
+                                    <option value="Kondisyon">Kondisyon Artırmak</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12 mt-4">
+                                <button type="submit" id="btnGenerate" class="btn btn-primary w-100 py-2 fw-bold">
+                                    🚀 Programımı Oluştur
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="loadingArea" class="text-center mt-4 d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Yapay Zeka vücut tipini analiz ediyor, lütfen bekle...</p>
+                    </div>
+
+                    <div id="resultArea" class="mt-4 p-4 bg-light rounded border d-none">
+                        <h4 class="text-success border-bottom pb-2">📋 Sana Özel Plan:</h4>
+                        <div id="aiResponseContent" class="mt-3"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $("#aiForm").submit(function (e) {
+            e.preventDefault(); // Sayfanın yenilenmesini engelle
+
+            // Verileri al
+            var age = $("#age").val();
+            var weight = $("#weight").val();
+            var height = $("#height").val();
+            var goal = $("#goal").val();
+
+            // Yükleniyor ekranını aç
+            $("#loadingArea").removeClass("d-none");
+            $("#resultArea").addClass("d-none");
+            $("#btnGenerate").prop("disabled", true);
+
+            // AJAX ile Controller'a git
+            $.ajax({
+                url: '/Ai/GetPlan',
+                type: 'POST',
+                data: { age: age, weight: weight, height: height, goal: goal },
+                success: function (response) {
+                    $("#loadingArea").addClass("d-none");
+                    $("#btnGenerate").prop("disabled", false);
+
+                    if (response.success) {
+                        // Gelen Markdown metnini HTML'e çevirip bas
+                        document.getElementById('aiResponseContent').innerHTML = marked.parse(response.message);
+                        $("#resultArea").removeClass("d-none");
+                    } else {
+                        alert("Hata: " + response.message);
+                    }
+                },
+                error: function () {
+                    $("#loadingArea").addClass("d-none");
+                    $("#btnGenerate").prop("disabled", false);
+                    alert("Bir hata oluştu!");
+                }
+            });
+        });
+    });
+</script>

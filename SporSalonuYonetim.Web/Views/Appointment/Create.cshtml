@@ -17,15 +17,15 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Hizmet Seçin</label>
-                        <select asp-for="ServiceId" class="form-control" asp-items="ViewBag.Services" required>
+                        <select asp-for="ServiceId" class="form-select" asp-items="ViewBag.Services" required>
                             <option value="">-- Hizmet Seç --</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Eğitmen Seçin</label>
-                        <select asp-for="TrainerId" class="form-control" asp-items="ViewBag.Trainers" required>
-                            <option value="">-- Eğitmen Seç --</option>
+                        <select asp-for="TrainerId" class="form-select" asp-items="ViewBag.Trainers" required>
+                            <option value="">-- Önce Hizmet Seçin --</option>
                         </select>
                     </div>
 
@@ -42,3 +42,48 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Hizmet kutusu değiştiğinde çalışır
+            $("#ServiceId").change(function () {
+                var serviceId = $(this).val();
+                var trainerSelect = $("#TrainerId");
+
+                // Önce hoca listesini temizle ve 'Yükleniyor' yaz
+                trainerSelect.empty();
+                trainerSelect.append('<option value="">-- Yükleniyor... --</option>');
+
+                if (serviceId) {
+                    // Controller'daki metoda git ve o branşın hocalarını getir
+                    $.ajax({
+                        url: '/Appointment/GetTrainersByService?serviceId=' + serviceId,
+                        type: 'GET',
+                        success: function (data) {
+                            trainerSelect.empty();
+                            trainerSelect.append('<option value="">-- Eğitmen Seç --</option>');
+                            
+                            if (data.length === 0) {
+                                trainerSelect.append('<option value="">Bu branşta hoca bulunamadı</option>');
+                            } else {
+                                // Gelen hocaları tek tek ekle
+                                $.each(data, function (i, trainer) {
+                                    trainerSelect.append($('<option></option>').val(trainer.id).html(trainer.fullName));
+                                });
+                            }
+                        },
+                        error: function() {
+                            alert("Hocalar yüklenirken bir hata oluştu!");
+                            trainerSelect.empty();
+                            trainerSelect.append('<option value="">-- Hata Oluştu --</option>');
+                        }
+                    });
+                } else {
+                    trainerSelect.empty();
+                    trainerSelect.append('<option value="">-- Önce Hizmet Seçin --</option>');
+                }
+            });
+        });
+    </script>
+}

@@ -18,13 +18,11 @@ namespace SporSalonuYonetim.Web.Controllers
             _context = context;
         }
 
-        // 1. RANDEVULARIM SAYFASI (Geçmiş ve Gelecek)
+        // 1. RANDEVULARIM SAYFASI
         public IActionResult Index()
         {
-            // Giriş yapan kullanıcının ID'sini bul
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Sadece bu kullanıcıya ait randevuları getir, hocası ve dersiyle beraber
             var appointments = _context.Appointments
                 .Include(a => a.Trainer)
                 .Include(a => a.Service)
@@ -38,50 +36,68 @@ namespace SporSalonuYonetim.Web.Controllers
         // 2. RANDEVU ALMA EKRANI (GET)
         public IActionResult Create()
         {
-            // Dropdown (Açılır Kutu) için verileri hazırla
-            ViewBag.Trainers = new SelectList(_context.Trainers, "Id", "FullName");
+            // Hizmetleri dolduruyoruz
             ViewBag.Services = new SelectList(_context.Services, "Id", "Name");
+            
+            // Eğitmenleri başta BOŞ gönderiyoruz (veya tümünü), çünkü hizmet seçilince JavaScript ile dolacak
+            ViewBag.Trainers = new SelectList(_context.Trainers, "Id", "FullName");
+            
             return View();
         }
 
-        // 3. RANDEVU KAYDETME İŞLEMİ (POST) - KRİTİK YER!
+        // 3. YENİ EKLENEN: HİZMETE GÖRE HOCALARI GETİREN METOT (AJAX İÇİN)
+        [HttpGet]
+        public IActionResult GetTrainersByService(int serviceId)
+        {
+            // 1. Seçilen hizmetin adını bul (Örn: "Yoga")
+            var service = _context.Services.Find(serviceId);
+            if (service == null) return Json(new List<object>());
+
+            // 2. Uzmanlığı bu hizmetin adı olan hocaları bul
+            var trainers = _context.Trainers
+                .Where(t => t.Specialty == service.Name) // Uzmanlık alanı eşleşenler
+                .Select(t => new {
+                    id = t.Id,
+                    fullName = t.FullName
+                })
+                .ToList();
+
+            return Json(trainers);
+        }
+
+        // 4. RANDEVU KAYDETME İŞLEMİ (POST)
         [HttpPost]
         public IActionResult Create(Appointment appointment)
         {
-            // Dropdownlar boş gelirse diye tekrar dolduruyoruz (Hata durumunda lazım)
-            ViewBag.Trainers = new SelectList(_context.Trainers, "Id", "FullName");
+            // Dropdownlar boş gelirse diye tekrar doldur
             ViewBag.Services = new SelectList(_context.Services, "Id", "Name");
+            ViewBag.Trainers = new SelectList(_context.Trainers, "Id", "FullName");
 
-            // 1. Kullanıcıyı ata
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             appointment.MemberId = userId;
             appointment.CreatedDate = DateTime.Now;
-            appointment.Status = "Onaylandı"; // Şimdilik direkt onaylayalım
+            appointment.Status = "Onay Bekliyor"; // Admin onayı gerektiği için "Beklemede" yapalım
 
-            // 2. Seçilen Hizmetin Süresini Bul (Bitiş saatini hesaplamak için)
             var selectedService = _context.Services.Find(appointment.ServiceId);
             if (selectedService == null) return View(appointment);
 
-            // Yeni Randevunun Başlangıç ve Bitiş Saati
             DateTime newStart = appointment.AppointmentDate;
             DateTime newEnd = newStart.AddMinutes(selectedService.Duration);
 
-            // --- ÇAKIŞMA KONTROLÜ (CONFLICT CHECK) --- 
-            // Veritabanına sor: "Bu hocanın, bu saat aralığında başka işi var mı?"
+            // --- ÇAKIŞMA KONTROLÜ ---
             bool isConflict = _context.Appointments.Any(x =>
-                x.TrainerId == appointment.TrainerId && // Aynı hoca
-                x.AppointmentDate < newEnd &&           // Mevcut işin başı, yeni işin bitişinden önceyse
-                x.AppointmentDate.AddMinutes(x.Service.Duration) > newStart // Mevcut işin sonu, yeni işin başından sonraysa
+                x.TrainerId == appointment.TrainerId &&
+                x.Status != "Reddedildi" && // Reddedilen randevular çakışma yaratmaz
+                x.AppointmentDate < newEnd &&
+                x.AppointmentDate.AddMinutes(x.Service.Duration) > newStart
             );
 
             if (isConflict)
             {
-                // Hata Mesajı Fırlat
                 ModelState.AddModelError("", "⚠️ Seçtiğiniz saatte bu antrenörün başka bir randevusu var. Lütfen başka bir saat seçin.");
                 return View(appointment);
             }
 
-            // Sorun yoksa kaydet
             if (ModelState.IsValid)
             {
                 _context.Appointments.Add(appointment);

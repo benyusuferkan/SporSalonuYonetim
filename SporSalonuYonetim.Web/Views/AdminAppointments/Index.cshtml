@@ -1,0 +1,68 @@
+@model IEnumerable<SporSalonuYonetim.Web.Entities.Appointment>
+
+@{
+    ViewData["Title"] = "Randevu Yönetimi";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-primary">📋 Randevu Yönetim Paneli</h2>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover shadow-sm bg-white">
+            <thead class="table-dark">
+                <tr>
+                    <th>Tarih & Saat</th>
+                    <th>Üye ID</th>
+                    <th>Hizmet</th>
+                    <th>Eğitmen</th>
+                    <th>Durum</th>
+                    <th style="width: 250px;">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">
+                            @item.AppointmentDate.ToString("dd.MM.yyyy") <br>
+                            <small class="text-muted">@item.AppointmentDate.ToString("HH:mm")</small>
+                        </td>
+                        <td><small>@item.MemberId</small></td>
+                        <td><span class="badge bg-info text-dark">@item.Service.Name</span></td>
+                        <td>@item.Trainer.FullName</td>
+                        <td>
+                            @if (item.Status == "Onaylandı")
+                            {
+                                <span class="badge bg-success">✔ Onaylandı</span>
+                            }
+                            else if (item.Status == "Reddedildi")
+                            {
+                                <span class="badge bg-danger">❌ Reddedildi</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">⏳ Beklemede</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                @if (item.Status != "Onaylandı")
+                                {
+                                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success" title="Onayla">✔</a>
+                                }
+                                
+                                @if (item.Status != "Reddedildi")
+                                {
+                                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Reddet">🚫</a>
+                                }
+
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger ms-2" 
+                                   onclick="return confirm('Bu randevuyu kalıcı olarak silmek istiyor musunuz?');" title="Sil">🗑 Sil</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
