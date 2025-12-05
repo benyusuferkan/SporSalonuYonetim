@@ -102,10 +102,34 @@ namespace SporSalonuYonetim.Web.Controllers
             {
                 _context.Appointments.Add(appointment);
                 _context.SaveChanges();
+                TempData["SuccessMessage"] = "Randevunuz başarıyla oluşturuldu.";
                 return RedirectToAction("Index");
             }
 
             return View(appointment);
+        }
+
+        // 5. YENİ EKLENEN: İPTAL İSTEĞİ GÖNDERME
+        [HttpPost]
+        public IActionResult RequestCancellation(int id)
+        {
+            var appointment = _context.Appointments.Find(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // GÜVENLİK: Randevu var mı ve bu kullanıcıya mı ait?
+            if (appointment != null && appointment.MemberId == userId)
+            {
+                // Doğrudan silmiyoruz, sadece bayrağı kaldırıyoruz
+                appointment.IsCancellationRequested = true;
+                _context.SaveChanges();
+                TempData["InfoMessage"] = "İptal talebiniz alındı. Yönetici onayından sonra randevunuz silinecektir.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "İşlem başarısız veya bu randevuyu iptal etmeye yetkiniz yok.";
+            }
+
+            return RedirectToAction("Index");
         }
     }
 }

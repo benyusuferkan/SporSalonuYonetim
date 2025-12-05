@@ -5,60 +5,105 @@
 }
 
 <div class="container mt-4">
-    <h2 class="mb-4 text-primary">📋 Randevu Yönetim Paneli</h2>
+    
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-circle"></i> @TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <h2 class="mb-4 text-primary"><i class="fa fa-clipboard-list"></i> Randevu Yönetim Paneli</h2>
 
     <div class="table-responsive">
         <table class="table table-bordered table-hover shadow-sm bg-white">
             <thead class="table-dark">
                 <tr>
                     <th>Tarih & Saat</th>
-                    <th>Üye ID</th>
+                    <th>Üye Bilgisi</th>
                     <th>Hizmet</th>
                     <th>Eğitmen</th>
                     <th>Durum</th>
-                    <th style="width: 250px;">İşlemler</th>
+                    <th style="min-width: 200px;">İşlemler</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
                 {
-                    <tr>
-                        <td class="fw-bold">
+                    <tr class="@(item.IsCancellationRequested ? "table-warning border-warning" : "")">
+                        <td class="fw-bold align-middle">
                             @item.AppointmentDate.ToString("dd.MM.yyyy") <br>
                             <small class="text-muted">@item.AppointmentDate.ToString("HH:mm")</small>
                         </td>
-                        <td><small>@item.MemberId</small></td>
-                        <td><span class="badge bg-info text-dark">@item.Service.Name</span></td>
-                        <td>@item.Trainer.FullName</td>
-                        <td>
-                            @if (item.Status == "Onaylandı")
+                        <td class="align-middle"><small>@item.MemberId</small></td>
+                        <td class="align-middle"><span class="badge bg-info text-dark">@item.Service?.Name</span></td>
+                        <td class="align-middle">@item.Trainer?.FullName</td>
+                        
+                        <td class="align-middle">
+                            @if (item.IsCancellationRequested)
                             {
-                                <span class="badge bg-success">✔ Onaylandı</span>
-                            }
-                            else if (item.Status == "Reddedildi")
-                            {
-                                <span class="badge bg-danger">❌ Reddedildi</span>
+                                <div class="text-danger fw-bold animate-pulse">
+                                    <i class="fa fa-exclamation-triangle"></i> İPTAL İSTEĞİ!
+                                </div>
                             }
                             else
                             {
-                                <span class="badge bg-warning text-dark">⏳ Beklemede</span>
+                                @if (item.Status == "Onaylandı")
+                                {
+                                    <span class="badge bg-success">✔ Onaylandı</span>
+                                }
+                                else if (item.Status == "Reddedildi")
+                                {
+                                    <span class="badge bg-danger">❌ Reddedildi</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">⏳ Beklemede</span>
+                                }
                             }
                         </td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                @if (item.Status != "Onaylandı")
-                                {
-                                    <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success" title="Onayla">✔</a>
-                                }
-                                
-                                @if (item.Status != "Reddedildi")
-                                {
-                                    <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Reddet">🚫</a>
-                                }
+                        
+                        <td class="align-middle">
+                            @if (item.IsCancellationRequested)
+                            {
+                                <div class="d-flex flex-column gap-2">
+                                    <a asp-action="ApproveCancellation" asp-route-id="@item.Id" 
+                                       class="btn btn-sm btn-danger w-100"
+                                       onclick="return confirm('İptali onaylayıp randevuyu silmek istiyor musunuz?');">
+                                        <i class="fa fa-check"></i> İptali Onayla (Sil)
+                                    </a>
+                                    
+                                    <a asp-action="RejectCancellation" asp-route-id="@item.Id" 
+                                       class="btn btn-sm btn-outline-dark w-100">
+                                        <i class="fa fa-times"></i> İptali Reddet
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="btn-group" role="group">
+                                    @if (item.Status != "Onaylandı")
+                                    {
+                                        <a asp-action="Approve" asp-route-id="@item.Id" class="btn btn-sm btn-success" title="Onayla">✔</a>
+                                    }
+                                    
+                                    @if (item.Status != "Reddedildi")
+                                    {
+                                        <a asp-action="Reject" asp-route-id="@item.Id" class="btn btn-sm btn-warning" title="Reddet">🚫</a>
+                                    }
 
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger ms-2" 
-                                   onclick="return confirm('Bu randevuyu kalıcı olarak silmek istiyor musunuz?');" title="Sil">🗑 Sil</a>
-                            </div>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger ms-2" 
+                                       onclick="return confirm('Bu randevuyu kalıcı olarak silmek istiyor musunuz?');" title="Sil">🗑</a>
+                                </div>
+                            }
                         </td>
                     </tr>
                 }

@@ -13,6 +13,9 @@ namespace SporSalonuYonetim.Web.Entities
 
         public DateTime AppointmentDate { get; set; } // Tarih ve Saat
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        // Entities/Appointment.cs içine eklenecek:
+        public bool IsCancellationRequested { get; set; } = false; // Varsayılan: Hayır
         
         // Durum: Onay Bekliyor, Onaylandı, İptal
         public string Status { get; set; } = "Pending"; 
