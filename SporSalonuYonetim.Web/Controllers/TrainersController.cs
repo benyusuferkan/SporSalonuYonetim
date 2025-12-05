@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering; // SelectList için gerekli kütüphane
+using Microsoft.AspNetCore.Mvc.Rendering;
 using SporSalonuYonetim.Web.Data;
 using SporSalonuYonetim.Web.Entities;
 
@@ -23,10 +23,8 @@ namespace SporSalonuYonetim.Web.Controllers
             return View(_context.Trainers.ToList());
         }
 
-        // DEĞİŞİKLİK 1: Sayfa açılırken Branşları (Hizmetleri) yükle
         public IActionResult Create()
         {
-            // Dropdown için verileri hazırla: (Kaydedilecek Değer: Name, Ekranda Görünen: Name)
             ViewBag.Services = new SelectList(_context.Services, "Name", "Name");
             return View();
         }
@@ -34,7 +32,6 @@ namespace SporSalonuYonetim.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Trainer trainer, IFormFile photoFile)
         {
-            // Validasyon: Fotoğraf yüklenmiş mi?
             if (photoFile != null)
             {
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + photoFile.FileName;
@@ -49,11 +46,9 @@ namespace SporSalonuYonetim.Web.Controllers
             }
             else
             {
-                // Fotoğraf yoksa varsayılan resim ata (Hata vermemesi için)
                 trainer.PhotoUrl = "default.png";
             }
 
-            // Kaydetme İşlemi
             if (ModelState.IsValid)
             {
                 _context.Trainers.Add(trainer);
@@ -61,19 +56,33 @@ namespace SporSalonuYonetim.Web.Controllers
                 return RedirectToAction("Index");
             }
 
-            // DEĞİŞİKLİK 2: Eğer hata varsa Dropdown'ı TEKRAR doldur (Yoksa sayfa patlar!)
             ViewBag.Services = new SelectList(_context.Services, "Name", "Name");
             return View(trainer);
         }
 
+        // --- DÜZELTİLEN KISIM BURASI ---
         public IActionResult Delete(int id)
         {
+            // 1. Önce Kontrol Et: Bu hocanın randevusu var mı?
+            // (Veritabanında Appointments tablosunda bu TrainerId ile eşleşen kayıt var mı?)
+            bool hasAppointments = _context.Appointments.Any(x => x.TrainerId == id);
+
+            if (hasAppointments)
+            {
+                // Eğer randevusu varsa silme! Hata mesajı yükle ve geri gönder.
+                TempData["ErrorMessage"] = "Bu antrenörün aktif veya geçmiş randevuları olduğu için SİLİNEMEZ! Lütfen önce randevuları iptal edin.";
+                return RedirectToAction("Index");
+            }
+
+            // 2. Eğer randevusu yoksa silme işlemine devam et
             var trainer = _context.Trainers.Find(id);
             if (trainer != null)
             {
                 _context.Trainers.Remove(trainer);
                 _context.SaveChanges();
+                TempData["SuccessMessage"] = "Antrenör başarıyla silindi.";
             }
+
             return RedirectToAction("Index");
         }
     }
