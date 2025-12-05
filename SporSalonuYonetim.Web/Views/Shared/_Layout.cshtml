@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,12 +8,15 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SporSalonuYonetim.Web.styles.css" asp-append-version="true" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SporSalonuYonetim.Web</a>
+                <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fa fa-dumbbell"></i> SporSalonu
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -30,17 +33,22 @@
 
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark fw-bold" asp-controller="Appointment" asp-action="Index">📅 Randevularım</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-primary fw-bold" asp-controller="Ai" asp-action="Index">🤖 AI Spor Hocası</a>
-                            </li>
+                            @* --- ÜYE MENÜSÜ (Sadece Admin Değilse Görünür) --- *@
+                            @if (!User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark fw-bold" asp-controller="Appointment" asp-action="Index">📅 Randevularım</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-primary fw-bold" asp-controller="Ai" asp-action="Index">🤖 AI Spor Hocası</a>
+                                </li>
+                            }
                         }
 
+                        @* --- ADMIN MENÜSÜ (Sadece Admin ise Görünür) --- *@
                         @if (User.IsInRole("Admin"))
                         {
-                            <li class="nav-item">
+                            <li class="nav-item border-start ms-2 ps-2 d-none d-md-block"></li> <li class="nav-item">
                                 <a class="nav-link text-dark fw-bold" asp-controller="Services" asp-action="Index">🛠 Hizmetler</a>
                             </li>
                             <li class="nav-item">
@@ -55,20 +63,23 @@
                     <ul class="navbar-nav ms-auto">
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <span class="nav-link text-primary fw-bold">Merhaba, @User.Identity.Name</span>
+                            <li class="nav-item d-flex align-items-center">
+                                <span class="nav-link text-primary fw-bold me-2">
+                                    @if(User.IsInRole("Admin")) { <span class="badge bg-danger me-1">Yönetici</span> }
+                                    Merhaba, @User.Identity.Name
+                                </span>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-danger border border-danger rounded ms-2" asp-controller="Account" asp-action="Logout">Çıkış Yap</a>
+                                <a class="nav-link btn btn-outline-danger btn-sm text-danger border-danger px-3 mt-1 mt-md-0" asp-controller="Account" asp-action="Logout">Çıkış Yap</a>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-white bg-primary rounded px-3 me-2" asp-controller="Account" asp-action="Login">Giriş Yap</a>
+                                <a class="nav-link text-white bg-primary rounded px-3 me-2 hover-shadow mb-1 mb-md-0" asp-controller="Account" asp-action="Login">Giriş Yap</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-white bg-success rounded px-3" asp-controller="Account" asp-action="Register">Kayıt Ol</a>
+                                <a class="nav-link text-white bg-success rounded px-3 hover-shadow" asp-controller="Account" asp-action="Register">Kayıt Ol</a>
                             </li>
                         }
                     </ul>
@@ -82,9 +93,9 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - SporSalonuYonetim.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top footer text-muted mt-5 py-3 bg-light">
+        <div class="container text-center">
+            &copy; 2025 - SporSalonuYonetim.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
