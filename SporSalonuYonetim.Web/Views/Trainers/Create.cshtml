@@ -1,20 +1,44 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+@model SporSalonuYonetim.Web.Entities.Trainer
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>disable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+@{
+    ViewData["Title"] = "Antrenör Ekle";
+}
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-  </ItemGroup>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow mt-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Yeni Antrenör Ekle</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Ad Soyad</label>
+                        <input asp-for="FullName" class="form-control" required />
+                    </div>
 
-</Project>
+                    <div class="mb-3">
+                        <label class="form-label">Uzmanlık Alanı (Branş)</label>
+                        <select asp-for="Specialty" class="form-select" asp-items="ViewBag.Services" required>
+                            <option value="">-- Branş Seçin --</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Biyografi</label>
+                        <textarea asp-for="Bio" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Profil Fotoğrafı</label>
+                        <input type="file" name="photoFile" class="form-control" accept="image/*" required />
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Kaydet</button>
+                    <a asp-action="Index" class="btn btn-secondary w-100 mt-2">Geri Dön</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

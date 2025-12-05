@@ -1,69 +1,125 @@
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json; 
+using Newtonsoft.Json;
+using System.Text;
 
 namespace SporSalonuYonetim.Web.Controllers
 {
-    [Authorize] // Sadece üyeler girebilsin
     public class AiController : Controller
     {
-        // 👇 SENİN API KEY'İN (Bunu buraya yazdım)
-        private readonly string _apiKey = "AIzaSyCf3ruJFmpIVshVlVcG_U9ManCPH_Zki8M"; 
+        private readonly IConfiguration _configuration;
 
+        public AiController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        [HttpGet]
         public IActionResult Index()
         {
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> GetPlan(int age, int weight, int height, string goal)
+        public async Task<IActionResult> GetPlan(int? age, int? weight, int? height, string goal)
         {
-            string resultText = "";
-
-            try
+            // 1. Veri Kontrolü
+            if (age == null || weight == null || height == null || string.IsNullOrEmpty(goal))
             {
-                using (var client = new HttpClient())
+                return Json(new { success = false, message = "Lütfen tüm alanları doldurun." });
+            }
+
+            string apiKey = _configuration["Gemini:ApiKey"];
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                return Json(new { success = false, message = "API Anahtarı bulunamadı." });
+            }
+
+            // 2. Prompt Hazırlığı
+            string prompt = $@"
+                Sen uzman bir spor hocasısın.
+                Kullanıcı: Yaş {age}, Kilo {weight}, Boy {height}, Hedef {goal}.
+                Lütfen Türkçe olarak Markdown formatında şunları yaz:
+                ### 1. Vücut Analizi
+                ### 2. Haftalık Antrenman Planı (Tablo şeklinde)
+                ### 3. Beslenme Tavsiyeleri (Maddeler halinde)
+            ";
+
+            using (var client = new HttpClient())
+            {
+                try
                 {
-                    var prompt = $"Ben {age} yaşında, {weight} kilo ve {height} cm boyunda biriyim. Hedefim: {goal}. Bana kişisel bir spor hocası gibi hitap ederek; motive edici, emojili ve kısa maddeler halinde 1 günlük örnek antrenman ve beslenme programı hazırla. Cevabı Markdown formatında ver.";
+                    // --- ADIM 1: ÇALIŞAN MODELİ BUL (Auto-Discovery) ---
+                    // Google'a soruyoruz: "Elimdeki anahtarla hangi modeller açık?"
+                    string listModelsUrl = $"https://generativelanguage.googleapis.com/v1beta/models?key={apiKey}";
+                    var listResponse = await client.GetAsync(listModelsUrl);
+                    
+                    if (!listResponse.IsSuccessStatusCode)
+                    {
+                        var error = await listResponse.Content.ReadAsStringAsync();
+                        return Json(new { success = false, message = $"Model listesi alınamadı. Hata: {error}" });
+                    }
+
+                    var listJson = await listResponse.Content.ReadAsStringAsync();
+                    dynamic listData = JsonConvert.DeserializeObject(listJson);
+                    
+                    string validModelName = "";
+
+                    // Listeden 'generateContent' yeteneği olan ilk modeli seçiyoruz
+                    foreach (var model in listData.models)
+                    {
+                        // Modelin yeteneklerine bak
+                        string supportedMethods = model.supportedGenerationMethods?.ToString() ?? "";
+                        string name = model.name?.ToString() ?? "";
+
+                        if (supportedMethods.Contains("generateContent"))
+                        {
+                            validModelName = name; // Örn: "models/gemini-1.0-pro"
+                            
+                            // Eğer daha iyi bir model (1.5 veya Flash) bulursak onu tercih et
+                            if (name.Contains("1.5") || name.Contains("flash"))
+                            {
+                                validModelName = name;
+                                break; // En iyiyi bulduk, döngüden çık
+                            }
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(validModelName))
+                    {
+                        return Json(new { success = false, message = "API anahtarınızla uyumlu metin modeli bulunamadı." });
+                    }
+
+                    // --- ADIM 2: BULUNAN MODEL İLE İSTEK YAP ---
+                    // validModelName zaten "models/gemini-..." formatında gelir, o yüzden url'e direkt ekliyoruz.
+                    string generateUrl = $"https://generativelanguage.googleapis.com/v1beta/{validModelName}:generateContent?key={apiKey}";
 
                     var requestBody = new
                     {
-                        contents = new[]
-                        {
-                            new {
-                                parts = new[] { new { text = prompt } }
-                            }
-                        }
+                        contents = new[] { new { parts = new[] { new { text = prompt } } } }
                     };
-
+                    
                     var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
-                    
-                    // DÜZELTME BURADA: Modeli 'gemini-pro' yaptık, bu kesin çalışır.
-                    string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={_apiKey}";
-                    
-                    var response = await client.PostAsync(url, jsonContent);
-                    
+                    var response = await client.PostAsync(generateUrl, jsonContent);
+
                     if (response.IsSuccessStatusCode)
                     {
-                        var responseString = await response.Content.ReadAsStringAsync();
-                        dynamic jsonResponse = JsonConvert.DeserializeObject(responseString);
-                        resultText = jsonResponse.candidates[0].content.parts[0].text;
+                        var jsonString = await response.Content.ReadAsStringAsync();
+                        dynamic result = JsonConvert.DeserializeObject(jsonString);
+                        string aiText = result.candidates[0].content.parts[0].text;
+                        
+                        return Json(new { success = true, message = aiText });
                     }
                     else
                     {
-                        // Hata detayını görelim
                         var errorContent = await response.Content.ReadAsStringAsync();
-                        resultText = $"⚠️ Hata: {response.StatusCode}. Detay: {errorContent}";
+                        return Json(new { success = false, message = $"Üretim Hatası ({validModelName}): {errorContent}" });
                     }
                 }
+                catch (Exception ex)
+                {
+                    return Json(new { success = false, message = $"Sistem Hatası: {ex.Message}" });
+                }
             }
-            catch (Exception ex)
-            {
-                resultText = "Bir hata oluştu: " + ex.Message;
-            }
-
-            return Json(new { success = true, message = resultText });
         }
     }
 }
