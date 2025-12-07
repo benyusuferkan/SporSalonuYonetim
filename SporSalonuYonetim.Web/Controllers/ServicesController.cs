@@ -37,19 +37,32 @@ namespace SporSalonuYonetim.Web.Controllers
             {
                 _context.Services.Add(service);
                 _context.SaveChanges();
+                TempData["SuccessMessage"] = "Yeni hizmet başarıyla eklendi.";
                 return RedirectToAction("Index");
             }
             return View(service);
         }
         
-        // 4. SİLME İŞLEMİ
+        // 4. SİLME İŞLEMİ (GÜVENLİ HALE GETİRİLDİ)
         public IActionResult Delete(int id)
         {
+            // EMNİYET KİLİDİ: Bu hizmete ait randevu var mı?
+            bool hasAppointments = _context.Appointments.Any(x => x.ServiceId == id);
+
+            if (hasAppointments)
+            {
+                // Eğer randevu varsa silme! Hata mesajı yükle ve geri gönder.
+                TempData["ErrorMessage"] = "Bu hizmete ait planlanmış randevular olduğu için SİLİNEMEZ! Lütfen önce ilgili randevuları iptal edin.";
+                return RedirectToAction("Index");
+            }
+
+            // Randevu yoksa sil
             var service = _context.Services.Find(id);
             if (service != null)
             {
                 _context.Services.Remove(service);
                 _context.SaveChanges();
+                TempData["SuccessMessage"] = "Hizmet başarıyla silindi.";
             }
             return RedirectToAction("Index");
         }

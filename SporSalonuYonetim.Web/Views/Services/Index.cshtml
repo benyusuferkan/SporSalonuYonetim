@@ -5,32 +5,53 @@
 }
 
 <div class="container mt-4">
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa fa-exclamation-triangle"></i> 
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>🏋️ Hizmet Yönetimi</h2>
-        <a asp-action="Create" class="btn btn-success">+ Yeni Hizmet Ekle</a>
+        <a asp-action="Create" class="btn btn-success shadow-sm">+ Yeni Hizmet Ekle</a>
     </div>
 
-    <table class="table table-hover table-bordered shadow-sm">
+    <table class="table table-hover table-bordered shadow-sm bg-white">
         <thead class="table-dark">
             <tr>
                 <th>Hizmet Adı</th>
                 <th>Süre (Dk)</th>
                 <th>Ücret (TL)</th>
                 <th>Açıklama</th>
-                <th>İşlemler</th>
+                <th class="text-center" style="width: 150px;">İşlemler</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in Model)
             {
                 <tr>
-                    <td class="fw-bold">@item.Name</td>
-                    <td>@item.Duration dk</td>
-                    <td>@item.Price ₺</td>
-                    <td>@item.Description</td>
-                    <td>
+                    <td class="fw-bold align-middle">@item.Name</td>
+                    <td class="align-middle">@item.Duration dk</td>
+                    <td class="align-middle">@item.Price ₺</td>
+                    <td class="align-middle text-muted small">@item.Description</td>
+                    <td class="align-middle text-center">
                         <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" 
-                           onclick="return confirm('Bu hizmeti silmek istediğine emin misin?');">Sil</a>
+                           onclick="return confirm('Bu hizmeti silmek istediğine emin misin?');">
+                           <i class="fa fa-trash"></i> Sil
+                        </a>
                     </td>
                 </tr>
             }
